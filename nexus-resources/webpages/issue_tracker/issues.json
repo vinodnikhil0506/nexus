@@ -1,0 +1,33 @@
+[
+  {
+    "id": 1,
+    "title": "DDR timing violation",
+    "description": "Setup time violation at 800MHz",
+    "component": "DDR Controller",
+    "revision": "Rev A",
+    "firmware": "v1.2.3",
+    "severity": "critical",
+    "status": "todo",
+    "created_at": "2026-07-29T16:34:31.101345",
+    "updated_at": "2026-07-29T16:34:31.101345"
+  },
+  {
+    "id": 2,
+    "title": "JTAG interface timing analysis",
+    "description": "Analysis in progress - initial timing measurements show 2ns margin",
+    "component": "JTAG Controller",
+    "revision": "Rev B",
+    "firmware": "v2.0.2",
+    "severity": "high",
+    "status": "in-progress",
+    "created_at": "2026-07-29T16:37:53.233155",
+    "updated_at": "2026-07-29T16:40:21.258425",
+    "comments": [
+      {
+        "text": "Debug: Clock tree analysis shows 150ps skew - acceptable",
+        "timestamp": "2026-07-29T16:40:21.256360"
+      }
+    ],
+    "assignee": null
+  }
+]

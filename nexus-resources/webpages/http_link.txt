@@ -1,0 +1,3 @@
+firefox http://localhost:8000/index.html - regression_db
+firefox http://localhost:8001/index.html - issue_tracker
+

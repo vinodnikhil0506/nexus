@@ -1,0 +1,31 @@
+# Nexus workspace requirements
+# Python 3.12+ is required by the shared MCPs and webpage apps.
+# Install uv first so the project can manage its per-app venvs.
+python3.12 -m pip install uv
+
+# Core project dependencies used across the Nexus stack.
+fastapi
+uvicorn
+pydantic
+fastmcp
+
+# VeriSight / analysis toolchain dependencies.
+chromadb
+google-generativeai
+anthropic
+jinja2
+rich
+python-dotenv
+
+# Optional / dev dependencies.
+pytest
+pytest-asyncio
+pywellen
+vcdvcd
+
+# Typical project setup:
+#   source ./init.sh
+#   uv --directory nexus-resources/webpages/issue_tracker run server.py
+#   uv --directory nexus-resources/webpages/regression_db run server.py
+#   uv --directory nexus-resources/mcp/issue_tracker run main.py
+#   uv --directory nexus-resources/mcp/regression_db run main.py

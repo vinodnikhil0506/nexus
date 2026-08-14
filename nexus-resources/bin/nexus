@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${NEXUS_ROOT:-}" ]]; then
+  echo "nexus: NEXUS_ROOT is not set — source /path/to/nexus/init.sh first." >&2
+  exit 1
+fi
+
+exec python3 "$NEXUS_ROOT/nexus-resources/nexus.py" "$@"

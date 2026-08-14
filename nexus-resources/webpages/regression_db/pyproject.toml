@@ -1,0 +1,13 @@
+# Regression Database dashboard + REST backend (nexus web component).
+# The regression_db MCP is an authenticated client of this service. Run it with
+# `uv --directory webpages/regression_db run server.py` (listens on :8000).
+[project]
+name = "regression-db-webpage"
+version = "0.2.0"
+description = "Hardware Regression Database dashboard + REST API backend (FastAPI)."
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn", "pydantic"]
+
+# A runnable service, not a distributable package: install deps only.
+[tool.uv]
+package = false

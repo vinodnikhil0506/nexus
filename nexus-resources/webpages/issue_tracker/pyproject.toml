@@ -1,0 +1,13 @@
+# Issue Tracker dashboard + REST backend (nexus web component).
+# The issue_tracker MCP is an authenticated client of this service. Run it with
+# `uv --directory webpages/issue_tracker run server.py` (listens on :8001).
+[project]
+name = "issue-tracker-webpage"
+version = "0.2.0"
+description = "Hardware Issue Tracker dashboard + REST API backend (FastAPI)."
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn", "pydantic"]
+
+# A runnable service, not a distributable package: install deps only.
+[tool.uv]
+package = false

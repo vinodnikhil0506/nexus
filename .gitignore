@@ -1,0 +1,16 @@
+# Local runtime / generated state
+.uv-cache/
+**/.uv-cache/
+**/__pycache__/
+**/.venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/*.pyc
+.nexus/
+.claude/
+
+# Per-user workspace and nested repo content
+nexus-workspace/
+
+# Keep the existing VeriSight checkout out of this root repo
+nexus-resources/ip/VeriSight/

@@ -1,0 +1,92 @@
+# nexus.toml — the single source of truth (team-maintained, same dir as nexus.py).
+# Defines the shared KB location, the universal MCP registry, and all domain packs.
+# Expansion rules (resolved by nexus.py at load/write time):
+#   {key}        -> value of another [framework] key (internal substitution)
+#   ${USER}, ${NEXUS_ROOT}, ${HOME}, ... -> non-credential env components, expanded at write time
+#   ${CRED}      -> a collected credential key -> left LITERAL, never written raw (R7)
+# Domain naming convention: HYPHEN (functional-sim). On-disk domains/<name>/ matches byte-for-byte.
+
+[framework]
+kb_root = "${NEXUS_ROOT}/nexus-resources/kb"
+# Optional maintainer-curated CANONICAL files (read-mostly). Engineers never write these;
+# each engineer writes their own {kb_user_dir}, aggregated for reads via kb/contrib/*.
+sig_db_md         = "{kb_root}/sig_db.md"          # canonical failure-signature index
+heuristics_md     = "{kb_root}/heuristics.md"      # canonical debug heuristics / tribal knowledge
+artifact_index_md = "{kb_root}/artifact_index.md"  # canonical artifact taxonomy
+
+# --- Per-user install: each engineer BUILDS AND OWNS an editable copy of the MCPs and
+# VeriSight under their user root, so they can add local test tools and reinstall via
+# nexus. Trade-off vs a shared install: heavier (one copy+venv per engineer), but every
+# engineer can customize their tools and `nexus` Update reinstalls their local copy.
+user_root        = "${NEXUS_ROOT}/nexus-workspace/users/${USER}"  # 755 so peers traverse to kb/
+mcp_root         = "{user_root}/mcp"               # per-user EDITABLE MCP copies: mcp/<name>/ (code + in-copy .venv)
+verisight_home   = "{user_root}/VeriSight"         # per-user EDITABLE VeriSight copy (code + .venv)
+skills_root      = "{user_root}/skills"            # per-user editable copy of shared skills/
+kb_user_dir      = "{user_root}/kb"                # 755 — peers read it via kb/contrib/${USER}
+uv_cache_dir     = "{user_root}/uv_cache"          # per-user uv cache
+credentials_file = "{user_root}/credentials.env"   # KEY=VALUE, chmod 600 — never checked in, never copied to ~/.claude
+
+# --- Universal MCP registry ---
+# Every server is launched over stdio as `uv --directory mcp/<name> run main.py`, with its
+# runtime deps installed into the per-user venv from that MCP's committed uv.lock.
+# UV_PROJECT_ENVIRONMENT / UV_CACHE_DIR are injected by nexus at write time — never hand-written here.
+# API keys are credentials -> nexus leaves them ${VAR}-literal (R7); the *_API_URL values are
+# plain path components written verbatim (adjust if a backend runs somewhere other than localhost).
+
+# regression_db: authenticated client of the Hardware Regression Database REST backend.
+[framework.mcps.regression_db]
+command = "${UV_PYTHON_INSTALL_DIR}/uv"
+args = ["--directory", "${NEXUS_ROOT}/nexus-resources/mcp/regression_db", "run", "main.py"]
+env = { REGRESSION_DB_API_URL = "http://localhost:8000/api", REGRESSION_DB_API_KEY = "${REGRESSION_DB_API_KEY}" }
+
+# issue_tracker: authenticated client of the Hardware Issue Tracker REST backend.
+[framework.mcps.issue_tracker]
+command = "${UV_PYTHON_INSTALL_DIR}/uv"
+args = ["--directory", "${NEXUS_ROOT}/nexus-resources/mcp/issue_tracker", "run", "main.py"]
+env = { TRACKER_API_URL = "http://localhost:8001/api", TRACKER_API_KEY = "${TRACKER_API_KEY}" }
+
+# gtkwave: headless VCD/FST waveform inspection. No credentials; GTKWAVE_HOME (FST helpers)
+# is optional, so no env is injected here — set it in the shell if FST support is needed.
+[framework.mcps.gtkwave]
+command = "${UV_PYTHON_INSTALL_DIR}/uv"
+args = ["--directory", "${NEXUS_ROOT}/nexus-resources/mcp/gtkwave", "run", "main.py"]
+
+# verisight: FastMCP wrapper (mcp/verisight/) around the read-only VeriSight IP
+# (ip/VeriSight/, a CLI — not an MCP). The wrapper subprocesses VeriSight; VeriSight is
+# never modified. VERISIGHT_HOME is a path (expanded) pointing at the IP under ip/; the
+# API keys are credentials left ${VAR}-literal (R7). VeriSight's own deps/venv are a
+# runtime prereq outside nexus provisioning — see mcp/verisight/README.md.
+[framework.mcps.verisight]
+command = "${UV_PYTHON_INSTALL_DIR}/uv"
+args = ["--directory", "${NEXUS_ROOT}/nexus-resources/mcp/verisight", "run", "main.py"]
+# VERISIGHT_HOME (the per-user VeriSight copy) is injected by nexus at write time from
+# {verisight_home}; the wrapper derives VERISIGHT_PYTHON as $VERISIGHT_HOME/.venv/bin/python.
+# VeriSight uses a SINGLE provider — Anthropic (VERISIGHT_PROVIDER pins it; Gemini dropped).
+# VERISIGHT_CHROMA_PATH stays per-user; ANTHROPIC_API_KEY is a credential (${VAR}-literal, R7).
+env = { VERISIGHT_PROVIDER = "anthropic", VERISIGHT_CHROMA_PATH = "${HOME}/.nexus/verisight_chroma", ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}" }
+
+# --- Domain packs ---
+# resource_map intentionally empty: the previous spec/ rtl/ dv/ formal/ directories were
+# removed in favor of shareable, domain-agnostic resources (mcp/ + skills/). Do not
+# reintroduce domain-specific resource directories here.
+[[domain]]
+name = "functional-sim"
+artifact_order = [
+  "sim.log - read first; extract the primary $error/$fatal message, the faulting simulation time, and the failing check/assertion name",
+  "waveform.fsdb - read second; at the faulting time, trace the failing signal back to its driver and capture the surrounding control state",
+]
+fingerprint_fields = ["fault_code", "cycle"]
+mcps = ["regression_db", "issue_tracker", "gtkwave", "verisight"]
+resource_map = []
+system_prompt = "domains/functional-sim/system_prompt.md"
+
+[[domain]]
+name = "formal-verif"
+artifact_order = [
+  "violation_report - read first; extract the failing property name and the bound/depth at which it failed",
+  "counterexample_trace - read second; extract the variable assignment sequence that drives the property to failure",
+]
+fingerprint_fields = ["property_name", "variable_values", "bound_depth"]
+mcps = ["regression_db", "issue_tracker"]
+resource_map = []
+system_prompt = "domains/formal-verif/system_prompt.md"

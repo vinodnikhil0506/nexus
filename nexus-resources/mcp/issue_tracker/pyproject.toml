@@ -1,0 +1,32 @@
+# Per-MCP manifest (nexus authoring convention).
+# issue_tracker is an authenticated client of the Issue Tracker REST dashboard backend.
+# Runtime dep (fastmcp) installs into the per-user venv (UV_PROJECT_ENVIRONMENT)
+# from the committed, read-only uv.lock; the shared mcp/<name>/ tree is never rewritten.
+[project]
+name = "issue-tracker-mcp"
+version = "0.2.0"
+description = "Nexus MCP server: authenticated client for the Hardware Issue Tracker — stdio, FastMCP."
+requires-python = ">=3.12"
+dependencies = ["fastmcp>=2.0"]
+
+# Install only the declared dependencies into the venv; main.py is a plain stdio
+# entry script (imported via sys.path), not a distributable package to build.
+[tool.uv]
+package = false
+
+# --- nexus tool-access declaration (the channel prompt 19 reads) ---
+# read-only => side-effect-free, safe for nexus to pre-approve in ~/.claude/settings.json
+# mutating  => outward/irreversible, stays confirm-on-use (human gate preserved)
+# A tool NOT listed here is treated as mutating (fail-safe toward confirmation).
+[tool.nexus.tools]
+get_issues        = { access = "read-only" }
+create_issue      = { access = "mutating" }
+update_issue      = { access = "mutating" }
+add_debug_comment = { access = "mutating" }
+delete_issue      = { access = "mutating" }
+
+# --- nexus MCP metadata ---
+[tool.nexus.mcp]
+entry           = "main.py"
+env_required    = []                   # TRACKER_API_URL has a localhost default; server starts anywhere
+env_credentials = ["TRACKER_API_KEY"]  # secret, left ${VAR}-literal; injected per-launch (R7)

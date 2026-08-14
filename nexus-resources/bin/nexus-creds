@@ -1,0 +1,13 @@
+#!/bin/sh
+# nexus-creds — print the engineer's credentials as KEY=VALUE lines, read FRESH from
+# {credentials_file} at each call. Used by the `claude` wrapper (init.csh / init.sh) to
+# inject credentials into that one claude launch only. Reads the credentials_file path
+# from ~/.nexus/config.toml so rotation (which only rewrites that file) takes effect on
+# the next launch automatically. Prints nothing (exit 0) if not yet initialized — the
+# expected, correct failure mode is a credentialed MCP failing to start, never leakage.
+cfg="$HOME/.nexus/config.toml"
+[ -f "$cfg" ] || exit 0
+credsfile=$(sed -n 's/^credentials_file *= *"\(.*\)"/\1/p' "$cfg" | head -1)
+[ -n "$credsfile" ] && [ -f "$credsfile" ] || exit 0
+# emit only well-formed KEY=VALUE lines (skip comments/blanks); never echoed elsewhere
+grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$credsfile"

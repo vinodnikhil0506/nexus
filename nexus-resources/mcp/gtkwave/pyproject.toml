@@ -1,0 +1,37 @@
+# Per-MCP manifest (nexus authoring convention).
+# gtkwave inspects VCD/FST waveform dumps headlessly (no GUI). The gtkwave_mcp
+# package sits beside main.py and is imported via sys.path at launch.
+# Runtime dep (fastmcp) installs into the per-user venv (UV_PROJECT_ENVIRONMENT)
+# from the committed, read-only uv.lock; the shared mcp/<name>/ tree is never rewritten.
+[project]
+name = "gtkwave-mcp"
+version = "0.1.0"
+description = "Nexus MCP server: headless VCD/FST waveform inspection (GTKWave toolchain) — stdio, FastMCP."
+requires-python = ">=3.12"
+dependencies = ["fastmcp>=2.0"]
+
+# Install only the declared dependencies into the venv; main.py imports the
+# adjacent gtkwave_mcp package via sys.path, so no project build is needed.
+[tool.uv]
+package = false
+
+# --- nexus tool-access declaration (the channel prompt 19 reads) ---
+# read-only => side-effect-free, safe for nexus to pre-approve in ~/.claude/settings.json
+# mutating  => outward/irreversible, stays confirm-on-use (human gate preserved)
+# A tool NOT listed here is treated as mutating (fail-safe toward confirmation).
+[tool.nexus.tools]
+waveform_info     = { access = "read-only" }
+list_signals      = { access = "read-only" }
+list_scopes       = { access = "read-only" }
+get_signal_values = { access = "read-only" }
+# FST/helper-dependent tools — HIDDEN from the tool list by default (they need GTKWave
+# helper binaries and convert_waveform writes to disk). Exposed only when the server is
+# launched with GTKWAVE_ENABLE_FST_TOOLS=1; access declared here for that case.
+mine_values       = { access = "read-only" }
+convert_waveform  = { access = "mutating" }   # writes a new waveform file to disk
+
+# --- nexus MCP metadata ---
+[tool.nexus.mcp]
+entry           = "main.py"
+env_required    = []   # GTKWAVE_HOME is optional (FST helpers only); VCD needs nothing
+env_credentials = []   # no secrets

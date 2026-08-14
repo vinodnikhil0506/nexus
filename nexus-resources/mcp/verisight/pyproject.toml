@@ -1,0 +1,25 @@
+# Per-MCP manifest (nexus authoring convention).
+# verisight is a thin FastMCP stdio WRAPPER around the read-only VeriSight IP under
+# ip/VeriSight/ (which is a CLI, not an MCP). This wrapper carries the nexus contract;
+# VeriSight itself is never modified. Only fastmcp installs into the wrapper's per-user
+# venv — VeriSight runs in its own environment (VERISIGHT_PYTHON), invoked as a subprocess.
+[project]
+name = "verisight-mcp"
+version = "0.1.0"
+description = "Nexus MCP wrapper for the VeriSight RTL/UVM debugging CLI — stdio, FastMCP."
+requires-python = ">=3.12"
+dependencies = ["fastmcp>=2.0"]
+
+[tool.uv]
+package = false
+
+# read-only => nexus may pre-approve; mutating => confirm-on-use. Undeclared => mutating.
+[tool.nexus.tools]
+list_examples   = { access = "read-only" }
+analyze_failure = { access = "mutating" }   # calls an LLM API + writes a report dir
+
+# --- nexus MCP metadata ---
+[tool.nexus.mcp]
+entry           = "main.py"
+env_required    = []                          # VERISIGHT_HOME is injected per-user by nexus
+env_credentials = ["ANTHROPIC_API_KEY"]       # single provider key (Anthropic), ${VAR}-literal (R7)

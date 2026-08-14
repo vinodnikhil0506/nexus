@@ -1,0 +1,10 @@
+implement/toolchain/
+__pycache__/
+*.pyc
+kb/contrib/*
+!kb/contrib/.gitkeep
+webpages/*/users.json
+webpages/*/sessions.json
+.venv/
+ip/*/.venv/
+ip/*/output/
