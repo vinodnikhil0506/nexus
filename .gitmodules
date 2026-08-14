@@ -1,0 +1,3 @@
+[submodule "nexus-resources/ip/VeriSight"]
+	path = nexus-resources/ip/VeriSight
+	url = https://github.com/KITTUV03/VeriSight.git
