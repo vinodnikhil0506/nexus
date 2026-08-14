@@ -589,7 +589,7 @@ def provision_verisight(cfg: dict, paths: dict):
     {verisight_home}/. Best-effort: VeriSight has heavy deps and no committed lock, so a
     build failure is reported as a warning (the wrapper degrades gracefully) rather than
     failing the whole init. The maintainer IP tree (ip/VeriSight) is never written."""
-    src = nexus_root() / "ip" / "VeriSight"
+    src = nexus_root() / "nexus-resources" / "ip" / "VeriSight"
     if not (src / "main.py").is_file():
         print("  note: ip/VeriSight not present — skipping VeriSight install "
               "(the verisight MCP will report it at tool-call time).")
@@ -755,16 +755,18 @@ def write_claude_md(cfg: dict, paths: dict, active_domains, backup: bool = True)
         "## KB write path (this engineer only)",
         f"Post-flight writes ONLY under: {paths['kb_user_dir']}",
         "",
-        f"@{root}/framework/kb-paths.md",
-        f"@{root}/framework/preflight.md",
+        "## Mandatory Framework Context",
         f"@{root}/framework/debug-router.md",
-        f"@{root}/domains/{active_domains[0]}/artifact_order.md",
-        f"@{root}/domains/{active_domains[0]}/fingerprint.md",
-        f"@{root}/domains/{active_domains[0]}/resource_map.md",
+        "",
+        "## On-Demand Resources (Read ONLY when explicitly required)",
+        f"- Framework Paths: `{root}/framework/kb-paths.md`",
+        f"- Preflight Checks: `{root}/framework/preflight.md`",
+        f"- Artifact Order: `{root}/domains/{active_domains[0]}/artifact_order.md`",
+        f"- Fingerprint Map: `{root}/domains/{active_domains[0]}/fingerprint.md`",
+        f"- Resource Map: `{root}/domains/{active_domains[0]}/resource_map.md`",
+        f"- Postflight Checks: `{root}/framework/postflight.md`",
+        f"- System Prompt: `{root}/domains/{active_domains[0]}/system_prompt.md`",
     ]
-    lines.append(f"@{root}/framework/postflight.md")
-    for d in active_domains:
-        lines.append(f"@{root}/domains/{d}/system_prompt.md")
     lines.append("")
     CLAUDE_MD.parent.mkdir(parents=True, exist_ok=True)
     if backup:

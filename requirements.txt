@@ -1,7 +1,7 @@
 # Nexus workspace requirements
 # Python 3.12+ is required by the shared MCPs and webpage apps.
 # Install uv first so the project can manage its per-app venvs.
-python3.12 -m pip install uv
+uv
 
 # Core project dependencies used across the Nexus stack.
 fastapi

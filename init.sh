@@ -6,9 +6,9 @@ export NEXUS_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>
 
 # `nexus` on PATH + uv/uvx. `uv` installs by default under $HOME/.local/bin,
 # so put that location on PATH before running any project helpers.
-mkdir -p "$HOME/.local/bin" "$NEXUS_ROOT/.uv-cache"
-export PATH="$HOME/.local/bin:$NEXUS_ROOT/nexus-resources/bin:$PATH"
-export UV_PYTHON_INSTALL_DIR="$HOME/.local/bin"
+mkdir -p "$NEXUS_ROOT/.uv-cache"
+export PATH="$NEXUS_ROOT/nexus-resources/bin:$PATH"
+export UV_PYTHON_INSTALL_DIR="$NEXUS_ROOT/.venv/bin"
 export UV_CACHE_DIR="$NEXUS_ROOT/.uv-cache"
 
 # Per-launch credential injection. Uses an array so values with spaces survive; `command
