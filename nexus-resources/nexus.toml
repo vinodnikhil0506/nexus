@@ -43,7 +43,7 @@ env = { REGRESSION_DB_API_URL = "http://localhost:8000/api", REGRESSION_DB_API_K
 [framework.mcps.issue_tracker]
 command = "${UV_PYTHON_INSTALL_DIR}/uv"
 args = ["--directory", "${NEXUS_ROOT}/nexus-resources/mcp/issue_tracker", "run", "main.py"]
-env = { TRACKER_API_URL = "http://localhost:8001/api", TRACKER_API_KEY = "${TRACKER_API_KEY}" }
+env = { ISSUE_TRACKER_API_URL = "http://localhost:8001/api", ISSUE_TRACKER_API_KEY = "${ISSUE_TRACKER_API_KEY}" }
 
 # gtkwave: headless VCD/FST waveform inspection. No credentials; GTKWAVE_HOME (FST helpers)
 # is optional, so no env is injected here — set it in the shell if FST support is needed.

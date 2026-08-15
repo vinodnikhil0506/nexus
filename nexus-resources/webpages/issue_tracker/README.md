@@ -14,7 +14,7 @@ Open `index.html` in a browser for the Kanban dashboard.
 ## Auth / API key (for the MCP)
 Login defaults are `admin` / `admin`. Easiest — use the helper (stdlib-only, no venv):
 ```sh
-python webpages/gen_api_key.py issue_tracker     # prints the key + TRACKER_API_KEY=… line
+python webpages/gen_api_key.py issue_tracker     # prints the key + ISSUE_TRACKER_API_KEY=… line
 ```
 Or by hand:
 ```sh
@@ -23,8 +23,8 @@ SID=$(curl -s -XPOST localhost:8001/api/login -H 'Content-Type: application/json
 curl -s -XPOST localhost:8001/api/generate-key -H "Authorization: Bearer $SID"
 ```
 Put the returned `tracker_…` key in the engineer's nexus credential store as
-`TRACKER_API_KEY` (nexus injects it into the MCP per-launch; never written raw — R7). The
-MCP's `TRACKER_API_URL` (nexus.toml) defaults to `http://localhost:8001/api`.
+`ISSUE_TRACKER_API_KEY` (nexus injects it into the MCP per-launch; never written raw — R7). The
+MCP's `ISSUE_TRACKER_API_URL` (nexus.toml) defaults to `http://localhost:8001/api`.
 
 ## Data (the shared KB, versioned with the workspace)
 - `issues.json` — issue records; `.issue_counter` — next-id counter (both beside `server.py`).

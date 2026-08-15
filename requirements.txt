@@ -1,5 +1,6 @@
 # Nexus workspace requirements
 # Python 3.12+ is required by the shared MCPs and webpage apps.
+
 # Install uv first so the project can manage its per-app venvs.
 uv
 
@@ -8,6 +9,7 @@ fastapi
 uvicorn
 pydantic
 fastmcp
+pyfiglet
 
 # VeriSight / analysis toolchain dependencies.
 chromadb

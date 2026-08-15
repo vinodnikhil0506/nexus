@@ -7,10 +7,5 @@
 **/.mypy_cache/
 **/*.pyc
 .nexus/
+.nexus_venv/
 .claude/
-
-# Per-user workspace and nested repo content
-nexus-workspace/
-
-# Keep the user workspaces isolated, but track the VeriSight dependency as a submodule
-# nexus-resources/ip/VeriSight/ is intentionally not ignored here

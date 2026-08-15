@@ -7,7 +7,7 @@ MCP expects. Stdlib-only — run it directly with the toolchain python; no venv 
 
 Usage:
     python gen_api_key.py regression_db          # -> REGRESSION_DB_API_KEY, :8000
-    python gen_api_key.py issue_tracker          # -> TRACKER_API_KEY,        :8001
+    python gen_api_key.py issue_tracker          # -> ISSUE_TRACKER_API_KEY,        :8001
     python gen_api_key.py regression_db --url http://host:8000/api
     python gen_api_key.py issue_tracker --user admin --password admin
 
@@ -22,7 +22,7 @@ import urllib.request
 # backend name -> (default REST base URL, the MCP credential env-var name)
 BACKENDS = {
     "regression_db": ("http://localhost:8000/api", "REGRESSION_DB_API_KEY"),
-    "issue_tracker": ("http://localhost:8001/api", "TRACKER_API_KEY"),
+    "issue_tracker": ("http://localhost:8001/api", "ISSUE_TRACKER_API_KEY"),
 }
 
 

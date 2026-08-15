@@ -48,8 +48,24 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-def verify_password(password: str, hashed: str) -> bool:
-    return hash_password(password) == hashed
+def verify_password(password: str, stored: str) -> bool:
+    if not stored:
+        return False
+    if stored == password:
+        return True
+    return hash_password(password) == stored
+
+
+def normalize_user_store(users: dict) -> bool:
+    changed = False
+    for username, user_data in users.items():
+        if not isinstance(user_data, dict):
+            continue
+        stored = user_data.get("password")
+        if isinstance(stored, str) and len(stored) != 64:
+            user_data["password"] = hash_password(stored)
+            changed = True
+    return changed
 
 
 def generate_api_key() -> str:
@@ -60,7 +76,10 @@ def load_users() -> dict:
     if not USERS_FILE.exists():
         return {}
     with open(USERS_FILE) as f:
-        return json.load(f)
+        users = json.load(f)
+    if normalize_user_store(users):
+        save_users(users)
+    return users
 
 
 def save_users(users: dict):
@@ -168,23 +187,53 @@ def get_next_id() -> int:
     return next_id
 
 
+@app.post("/api/register")
+async def register(request: LoginRequest):
+    username = request.username.strip()
+    password = request.password.strip()
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+
+    users = load_users()
+    if username in users:
+        raise HTTPException(status_code=409, detail="User already exists")
+
+    users[username] = {
+        "password": hash_password(password),
+        "api_keys": []
+    }
+    save_users(users)
+
+    session_id = secrets.token_urlsafe(32)
+    sessions = load_sessions()
+    sessions[session_id] = {
+        "username": username,
+        "expires": (datetime.utcnow() + timedelta(days=7)).isoformat()
+    }
+    save_sessions(sessions)
+
+    return {"session_id": session_id, "username": username}
+
+
 @app.post("/api/login")
 async def login(request: LoginRequest):
+    username = request.username.strip()
+    password = request.password.strip()
     users = load_users()
-    user = users.get(request.username)
+    user = users.get(username)
 
-    if not user or not verify_password(request.password, user["password"]):
+    if not user or not verify_password(password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     session_id = secrets.token_urlsafe(32)
     sessions = load_sessions()
     sessions[session_id] = {
-        "username": request.username,
+        "username": username,
         "expires": (datetime.utcnow() + timedelta(days=7)).isoformat()
     }
     save_sessions(sessions)
 
-    return {"session_id": session_id, "username": request.username}
+    return {"session_id": session_id, "username": username}
 
 
 @app.post("/api/logout")

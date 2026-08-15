@@ -20,7 +20,37 @@ import hashlib
 import tempfile
 import tomllib
 import subprocess
+import importlib.util
 from pathlib import Path
+
+
+def _load_logo_module():
+    """Import the existing logo.py by file path without requiring it to be a package."""
+    p = Path(__file__).resolve().with_name("logo.py")
+    if not p.is_file():
+        raise ImportError(f"logo module not found at {p}")
+    spec = importlib.util.spec_from_file_location("nexus_logo", p)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot create import spec for {p}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+logo_mod = _load_logo_module()
+
+if hasattr(logo_mod, "show_nexus_logo"):
+    show_nexus_logo = logo_mod.show_nexus_logo
+else:
+    def show_nexus_logo():
+        """Compatibility adapter for the current logo.py layout: it renders at import time,
+        so we simply print the already-constructed rich table if it exists."""
+        if hasattr(logo_mod, "table"):
+            logo_mod.console.print(logo_mod.table)
+        elif hasattr(logo_mod, "console"):
+            logo_mod.console.print("NEXUS")
+        else:
+            print("NEXUS")
 
 # ~/.nexus is the per-user control dir (config + lock); these are fixed home-dir paths,
 # NOT read from nexus.toml (R5 concerns the shared tree, not this control dir).
@@ -474,14 +504,14 @@ def _choose_subset(items, kind: str) -> list:
         except (EOFError, KeyboardInterrupt):
             die("selection cancelled (Ctrl+C) — re-run nexus to initialize.")
 
-    print(f"Available {kind}:")
+    print(f"\nAvailable {kind}:")
     for i, it in enumerate(items, 1):
         print(f"  {i}) {it}")
 
     # 1) selection — numbers or 'all'; Enter selects none. Only a bad token re-prompts.
     chosen = None
     while chosen is None:
-        raw = ask(f"Select {kind} [all / numbers, comma-separated] (Enter to select none): ")
+        raw = ask(f"\nSelect {kind} [all / numbers, comma-separated] (Enter to select none): ")
         ok, sel = _parse_selection(raw, items)
         if ok:
             chosen = sel
@@ -561,6 +591,7 @@ def provision_mcp_venv(cfg: dict, paths: dict, mcp_name: str):
     new test tools — survive). Then `uv sync` builds/updates the copy's own in-tree .venv
     (non-frozen, so newly added tools/deps in the local pyproject are picked up). Re-running
     (init or Update) is a reinstall. The maintainer source tree is never written (R9)."""
+    print(f"Installing MCP '{mcp_name}'...", flush=True)
     shared_src = mcp_source_dir(cfg, mcp_name)
     if not (shared_src / "uv.lock").is_file():
         print(f"  note: shared MCP source for '{mcp_name}' is missing uv.lock; continuing with a user-local install under {paths['mcp_root']}")
@@ -890,10 +921,12 @@ def run_init(cfg: dict) -> int:
         domain = init_pick_domain(cfg)
         active = [domain]
         mcps = init_select_mcps(cfg, required_mcps(cfg, active))  # list domain MCPs; pick all/subset
+        print(" ")
         verify_prereqs(cfg, active, mcps)  # before creating anything (R6)
         selected_skills = []
         try:
             cred_keys = init_collect_credentials(cfg, mcps, paths)  # creds for SELECTED mcps only
+            print(" ")
             for m in mcps:
                 provision_mcp_venv(cfg, paths, m)                  # per-user editable copy + venv
             if "verisight" in mcps:
@@ -913,11 +946,11 @@ def run_init(cfg: dict) -> int:
             rollback_init(paths, selected_skills)
             die("init failed — rolled back partial setup; re-run nexus to try again.")
     if mcps:
-        print(f"Installed MCP servers (your editable copies under {paths['mcp_root']}): {', '.join(mcps)}")
-        print("Add local test tools to a copy, then re-run `nexus` -> Update to reinstall it.")
+        print(f"\nInstalled MCP servers (in {paths['mcp_root']})")
+        #print("Add local test tools to a copy, then re-run `nexus` -> Update to reinstall it.")
     else:
         print("Installed MCP servers: (none) — skipped; run `nexus` -> Update to add some later.")
-    print(f"Installed skills (in ~/.claude/skills): {', '.join(selected_skills) if selected_skills else '(none)'}")
+    print(f"Installed skills (in ~/.claude/skills)")
     print("Setup complete - run `claude` to start.")
     return 0
 
@@ -956,16 +989,17 @@ def action_show_status(cfg: dict, user_cfg: dict):
     venv_root = Path(paths["mcp_root"])
     installed = sorted(p.name for p in venv_root.iterdir() if p.is_dir()) if venv_root.is_dir() else []
     kb_user = paths["kb_user_dir"]
-
-    print("  -- USER --")
+    print("- - - - - - - -")
+    print("USER:")
     print(f"  domain(s):        {', '.join(domains) if domains else '(none)'}")
     print(f"  installed MCPs:   {', '.join(installed) if installed else '(none)'}")
     print(f"  agent config:     {CLAUDE_MD}")
     print(f"  nexus config:     {CONFIG_PATH}")
-    print("  -- SHARED --")
+    print("SHARED:")
     print(f"  kb_root:          {paths['kb_root']}")
     print(f"  your sig_db.md:   {_count_entries(Path(kb_user) / 'sig_db.md')} entries")
     print(f"  your heuristics:  {_count_entries(Path(kb_user) / 'heuristics.md')} entries")
+    print("- - - - - - - -")
 
 
 # --------------------------------------------------------------------------- #
@@ -1028,7 +1062,7 @@ def action_verify(cfg: dict, user_cfg: dict):
         print("  no MCP servers installed.")
         return
     targets = installed
-    ans = input(f"Verify all {len(installed)} installed servers, or just one? [A/number]: ").strip().lower()
+    ans = input(f"\nVerify all {len(installed)} installed servers, or just one? [A/number]: ").strip().lower()
     if ans not in ("", "a", "all"):
         for i, n in enumerate(installed, 1):
             print(f"  {i}) {n}")
@@ -1228,7 +1262,8 @@ def action_update(cfg: dict, user_cfg: dict):
                 provision_mcp_venv(cfg, paths, m)  # re-provision rewrites the marker
                 print(f"    resynced {m}.")
         else:
-            print("  all installed MCPs are current.")
+            print("- - - - - - - -")
+            print("  All installed MCPs are current.")
         # (2) stale shared content — report-only
         detect_stale_shared_content(cfg, active)
         # (3) install newly-added domain MCPs + regenerate the three ~/.claude files
@@ -1366,6 +1401,7 @@ def action_clean(cfg: dict, user_cfg: dict):
     symlink (durable KB, R11). Under lock (R4)."""
     paths = resolve_framework_paths(cfg)
     with nexus_lock():
+        print("- - - - - - - -")
         print("Clean will REMOVE (this engineer's own install + state):")
         print(f"  - MCP copies:    {paths['mcp_root']}")
         print(f"  - VeriSight:     {paths['verisight_home']}")
@@ -1375,9 +1411,10 @@ def action_clean(cfg: dict, user_cfg: dict):
         print(f"  - credentials:   {paths['credentials_file']}")
         print(f"  - nexus config:  {CONFIG_PATH}")
         print(f"  - ~/.claude:     CLAUDE.md, settings.json, .claude.json (restored from .bak if present)")
-        print("Clean will PRESERVE (durable KB — never removed):")
+        print("\nClean will PRESERVE (durable KB — never removed):")
         print(f"  - {paths['kb_user_dir']} + kb/contrib/"
               f"{os.environ.get('USER') or getpass.getuser()} symlink")
+        print("- - - - - - - -")
         try:
             ans = input('Type "yes" to proceed (anything else aborts): ').strip()
         except (EOFError, KeyboardInterrupt):
@@ -1441,6 +1478,7 @@ def main() -> int:
     if len(sys.argv) > 1:
         print("nexus takes no arguments — just run `nexus`.")
         return 2
+    show_nexus_logo()
     nexus_root()                 # validate NEXUS_ROOT early (R5)
     cfg = load_nexus_toml()      # validate the shared config (R6)
     user_cfg = load_user_config()

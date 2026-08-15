@@ -14,8 +14,8 @@ mutations actually reach the backend.
 Transport: stdio (FastMCP default). Configuration comes ONLY from the
 environment — nothing is hardcoded:
 
-  TRACKER_API_URL  (path,       optional) base REST URL; default http://localhost:8001/api
-  TRACKER_API_KEY  (credential, required by every tool) sent as the X-API-Key header
+  ISSUE_TRACKER_API_URL  (path,       optional) base REST URL; default http://localhost:8001/api
+  ISSUE_TRACKER_API_KEY  (credential, required by every tool) sent as the X-API-Key header
 
 The credential is validated LAZILY, inside each tool, so the server still starts
 and answers ``initialize`` / ``tools/list`` (nexus Verify passes) with no secret.
@@ -46,15 +46,15 @@ _DEFAULT_URL = "http://localhost:8001/api"
 
 def _api_url() -> str:
     """Issue Tracker REST base URL (env, with a localhost default)."""
-    return os.environ.get("TRACKER_API_URL") or _DEFAULT_URL
+    return os.environ.get("ISSUE_TRACKER_API_URL") or _DEFAULT_URL
 
 
 def _require_key() -> str:
-    """Return TRACKER_API_KEY or raise a single actionable line (validated lazily)."""
-    key = os.environ.get("TRACKER_API_KEY")
+    """Return ISSUE_TRACKER_API_KEY or raise a single actionable line (validated lazily)."""
+    key = os.environ.get("ISSUE_TRACKER_API_KEY")
     if not key:
         raise ValueError(
-            "issue_tracker: TRACKER_API_KEY is not set — export it (nexus injects it "
+            "issue_tracker: ISSUE_TRACKER_API_KEY is not set — export it (nexus injects it "
             "per-launch) before using tracker tools"
         )
     return key
@@ -81,7 +81,7 @@ def _request(method: str, path: str, body: Optional[dict] = None):
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             raise ValueError("not found") from None
-        hint = " (authentication failed — check TRACKER_API_KEY)" if exc.code == 401 else ""
+        hint = " (authentication failed — check ISSUE_TRACKER_API_KEY)" if exc.code == 401 else ""
         raise ValueError(f"Issue Tracker API error {exc.code} {exc.reason}{hint}") from None
     except urllib.error.URLError as exc:
         raise ValueError(

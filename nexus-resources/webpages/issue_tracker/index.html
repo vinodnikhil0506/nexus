@@ -553,7 +553,10 @@
             <div class="login-form">
                 <input type="text" id="loginUsername" placeholder="Username" autocomplete="off">
                 <input type="password" id="loginPassword" placeholder="Password" autocomplete="off">
-                <button onclick="trackerApp.login()">Sign In</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="trackerApp.login()" style="flex: 1;">Sign In</button>
+                    <button type="button" onclick="trackerApp.register()" style="flex: 1; background: #36b37e;">Register</button>
+                </div>
                 <div class="login-error" id="loginError"></div>
             </div>
         </div>
@@ -1063,8 +1066,8 @@
 
         const trackerApp = {
             async login() {
-                const username = document.getElementById('loginUsername').value;
-                const password = document.getElementById('loginPassword').value;
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
                 const errorDiv = document.getElementById('loginError');
 
                 if (!username || !password) {
@@ -1081,7 +1084,8 @@
                     });
 
                     if (!response.ok) {
-                        errorDiv.textContent = 'Invalid username or password';
+                        const data = await response.json().catch(() => ({ detail: 'Invalid username or password' }));
+                        errorDiv.textContent = data.detail || 'Invalid username or password';
                         errorDiv.style.display = 'block';
                         return;
                     }
@@ -1092,6 +1096,41 @@
                     this.showDashboard(data.username);
                 } catch (error) {
                     errorDiv.textContent = 'Login failed: ' + error.message;
+                    errorDiv.style.display = 'block';
+                }
+            },
+
+            async register() {
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+                const errorDiv = document.getElementById('loginError');
+
+                if (!username || !password) {
+                    errorDiv.textContent = 'Please enter a username and password';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json().catch(() => ({ detail: 'Registration failed' }));
+                        errorDiv.textContent = data.detail || 'Registration failed';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    const data = await response.json();
+                    localStorage.setItem('sessionId', data.session_id);
+                    localStorage.setItem('username', data.username);
+                    this.showDashboard(data.username);
+                } catch (error) {
+                    errorDiv.textContent = 'Registration failed: ' + error.message;
                     errorDiv.style.display = 'block';
                 }
             },

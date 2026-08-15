@@ -38,5 +38,5 @@ Tools: `get_issues` (read-only); `create_issue`, `update_issue`, `add_debug_comm
    after the engineer explicitly confirms the specific `issue_id` should you call it; then
    report the outcome. Never batch-delete or infer the target.
 
-Errors (missing `TRACKER_API_KEY`, an unreachable backend, or a not-found id) come back as
+Errors (missing `ISSUE_TRACKER_API_KEY`, an unreachable backend, or a not-found id) come back as
 a one-line `{"error": ...}` / `{"success": false, ...}` payload — relay it, don't retry blindly.

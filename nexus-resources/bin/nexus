@@ -6,4 +6,4 @@ if [[ -z "${NEXUS_ROOT:-}" ]]; then
   exit 1
 fi
 
-exec python3 "$NEXUS_ROOT/nexus-resources/nexus.py" "$@"
+exec python3 "$NEXUS_ROOT/nexus-resources/src/nexus.py" "$@"
