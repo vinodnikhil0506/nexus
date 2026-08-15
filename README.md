@@ -1,193 +1,916 @@
-# Nexus
+# NEXUS
 
-**Nexus** is a lightweight AI-powered workspace for debugging hardware and verification failures. It connects **AI agents, MCPs, Skills, shared knowledge, regression data, logs, waveforms, and issue tracking** into one reusable debug workflow.
+NEXUS is an AI-powered hardware verification debug framework that brings together **agentic AI, MCPs, Skills, regression analysis, shared knowledge, issue tracking, and specialized verification agents** into a reusable debug workflow.
 
-## Features
+NEXUS can use **VeriSight as a specialized AI verification-debug capability** to analyze specifications, RTL, UVM testbenches, simulation logs, coverage, and waveforms, identify root causes, generate reports, and propose fixes.
 
-* **Agentic AI** — AI agents for hardware debug and verification
-* **MCP Integration** — Connect agents to project and debug tools
-* **Reusable Skills** — Shared capabilities across projects and engineers
-* **Hardware Verification Agents** — Custom agents for RTL, SystemVerilog, UVM, and verification
-* **Regression Analysis** — Analyze failures across regression runs
-* **Log Debugging** — Extract errors and failure signatures from logs
-* **Waveform Debugging** — Investigate simulation behavior and waveform data
-* **Root-Cause Analysis** — Trace failures from symptoms to likely root cause
-* **Failure Triage** — Classify and prioritize hardware and verification failures
-* **Issue Creation** — Create issues from confirmed failures
-* **Knowledge Reuse** — Search existing failures before starting a new investigation
-* **Shared Debug Framework** — Reuse resources across domains and engineers
-* **Token Efficient** — Use targeted tools and existing knowledge instead of repeatedly loading large contexts
-* **Local Web Tools** — Issue Tracker and Regression DB services
-* **Domain-Aware Setup** — Select the resources and Skills required for a specific hardware domain
+## Overview
 
-## Tech Stack
-
-| Component                   | Purpose                                          |
-| --------------------------- | ------------------------------------------------ |
-| **Python**                  | Project setup and automation                     |
-| **Shell**                   | Environment initialization                       |
-| **Claude Code**             | AI agent interface                               |
-| **MCP**                     | Connect AI agents to external/project tools      |
-| **Skills**                  | Reusable AI capabilities                         |
-| **NEXUS Resources**         | Shared MCPs, Skills, agents, and debug resources |
-| **VeriSight IP/Agent Flow** | Hardware verification and debug analysis         |
-| **Issue Tracker**           | Failure and issue management                     |
-| **Regression DB**           | Regression results and failure analysis          |
-| **SystemVerilog / UVM**     | Hardware verification domains                    |
-| **RTL**                     | Hardware design/debug domain                     |
-
-> The exact MCPs, Skills, and domain resources are selected during NEXUS setup. They are maintained as reusable shared resources instead of being duplicated inside individual projects.
-
-## Folder Structure
+Hardware verification debug normally requires engineers to move between many sources of information:
 
 ```text
-nexus/
-├── nexus-resources/          # Shared resources used across projects/users
-│   ├── mcp/                  # MCP servers and configurations
-│   ├── skills/               # Reusable AI Skills
-│   └── ...                   # Other shared debug resources
-│
-├── nexus-workspace/          # Workspace/domain configuration
-│   └── ...                   # Project-specific workspace setup
-│
-├── init.sh                   # Environment initialization
-├── requirements.txt          # Python dependencies
-├── .gitmodules               # Git submodule configuration
-└── README.md                 # Project documentation
+Specification
+RTL
+SystemVerilog
+UVM
+Simulation Logs
+Regression Results
+Coverage
+Waveforms
+Previous Issues
+Previous Debug Results
 ```
 
-### Shared vs. Workspace Resources
+NEXUS brings these resources into a common AI-driven workflow.
 
-Nexus separates **shared resources** from **workspace configuration**.
+Instead of creating one large agent that tries to understand every hardware-debug problem, NEXUS uses a **resource-based architecture**.
+
+The agent first understands the current workspace and failure, then selects the appropriate MCP, Skill, custom hardware agent, or VeriSight analysis flow.
 
 ```text
-Shared Resources
-      │
-      ├── MCPs
-      ├── Skills
-      ├── Debug knowledge
-      ├── Agents
-      └── Common tools
-             │
-             ▼
-      ┌───────────────┐
-      │     NEXUS     │
-      └───────────────┘
-             │
-       ┌─────┴─────┐
-       ▼           ▼
-   Engineer A   Engineer B
-       │           │
-       ▼           ▼
-   Domain A     Domain B
+                         Hardware Failure
+                                |
+                                v
+                         NEXUS AI Agent
+                                |
+                                v
+                      Workspace Discovery
+                                |
+                                v
+                       Failure Classification
+                                |
+              +-----------------+-----------------+
+              |                 |                 |
+              v                 v                 v
+             MCP             Skill        Hardware Agent
+              |                 |                 |
+              +-----------------+-----------------+
+                                |
+                                v
+                       Existing Knowledge?
+                         /               \
+                       Yes               No
+                        |                 |
+                        v                 v
+                    Reuse Result     Select Deep
+                                     Debug Flow
+                                          |
+                                          v
+                                      VeriSight
+                                          |
+                                          v
+                               Verification Analysis
+                                          |
+                       +------------------+------------------+
+                       |                  |                  |
+                       v                  v                  v
+                 Root Cause          Waveform/RTL       Candidate Fix
+                   Analysis             Analysis
+                       |                  |                  |
+                       +------------------+------------------+
+                                          |
+                                          v
+                                  NEXUS Shared Knowledge
+                                          |
+                                          v
+                                     Issue / Report
 ```
 
-This allows multiple engineers and domains to reuse the same debug capabilities and knowledge without maintaining separate copies.
+The important principle is that **NEXUS and VeriSight work together as parts of the same debug flow**.
 
-## Getting Started
+---
 
-### 1. Clone the repository
+## Architecture
+
+The system is organized into several layers.
+
+```text
++-----------------------------------------------------------+
+|                     Engineer / User                       |
++------------------------------+----------------------------+
+                               |
+                               v
++-----------------------------------------------------------+
+|                    NEXUS AI Orchestrator                  |
+|                                                           |
+| Workspace Discovery | Failure Triage | Resource Routing  |
++------------------------------+----------------------------+
+                               |
+              +----------------+----------------+
+              |                |                |
+              v                v                v
+           NEXUS MCPs     NEXUS Skills    Custom Agents
+              |                |                |
+              +----------------+----------------+
+                               |
+                               v
++-----------------------------------------------------------+
+|                 Shared Debug Infrastructure                |
+|                                                           |
+| Regression DB | Knowledge Base | Issue Tracker | Results  |
++------------------------------+----------------------------+
+                               |
+                               v
++-----------------------------------------------------------+
+|                    VeriSight Debug Flow                    |
+|                                                           |
+| Knowledge Extraction                                      |
+|        ↓                                                  |
+| Root Cause Classification                                 |
+|        ↓                                                  |
+| RTL Root Cause Analysis                                   |
+|        ↓                                                  |
+| Report Generation                                         |
+|        ↓                                                  |
+| Fix Generation                                            |
++------------------------------+----------------------------+
+                               |
+                               v
++-----------------------------------------------------------+
+|                 Shared NEXUS Results                      |
+|                                                           |
+| Root Cause | Evidence | Fix | Knowledge | Issue          |
++-----------------------------------------------------------+
+```
+
+Each component contributes to the same debugging workflow.
+
+---
+
+## NEXUS as the Debug Entry Point
+
+NEXUS is the common entry point for engineers and AI agents.
+
+When a debug session starts, the agent should first understand the workspace.
+
+For example:
+
+```text
+project/
+├── rtl/
+├── tb/
+├── tests/
+├── regression/
+├── logs/
+├── waves/
+└── ...
+```
+
+The agent determines what type of project and failure it is dealing with.
+
+Possible classifications include:
+
+```text
+RTL
+SystemVerilog
+UVM
+Testbench
+Simulation
+Regression
+Assertion
+Protocol
+Waveform
+Configuration
+EDA Tool
+Infrastructure
+Unknown
+```
+
+The agent should not immediately start reading every file.
+
+Instead:
+
+```text
+Discover
+   ↓
+Classify
+   ↓
+Search Existing Knowledge
+   ↓
+Select Required Capability
+```
+
+This keeps the context small and avoids unnecessary token consumption.
+
+---
+
+## NEXUS MCPs and Skills
+
+NEXUS provides reusable **MCPs and Skills** that expose capabilities to the AI agent.
+
+These capabilities can be used for tasks such as:
+
+```text
+Regression Analysis
+Log Analysis
+Waveform Analysis
+Issue Tracking
+Knowledge Search
+Hardware Debug
+Verification Analysis
+Project Information
+```
+
+The agent should dynamically select only the MCPs and Skills required for the current failure.
+
+It should not load every available resource.
+
+For example:
+
+```text
+UVM Failure
+    |
+    +---- Regression MCP
+    |
+    +---- Log Analysis Skill
+    |
+    +---- VeriSight
+```
+
+While another failure might only require:
+
+```text
+Regression Failure
+    |
+    +---- Regression MCP
+    |
+    +---- Knowledge Search
+```
+
+There is no need to invoke VeriSight when the existing knowledge already explains the failure.
+
+---
+
+## VeriSight as a NEXUS Debug Capability
+
+VeriSight is integrated into NEXUS as a **specialized verification-debug capability**.
+
+It is particularly useful when a failure requires correlation between:
+
+* Design specification
+* RTL
+* UVM testbench
+* Simulation logs
+* Coverage
+* Waveforms/VCD
+* Signal behavior
+
+VeriSight provides a multi-agent debugging pipeline that can build a structured understanding of the failure, classify its root cause, perform deeper RTL analysis when required, generate reports, and propose a source-code fix.
+
+NEXUS does not need to reproduce these capabilities.
+
+Instead, NEXUS determines:
+
+> **"This failure requires deeper verification analysis, so invoke VeriSight."**
+
+---
+
+## Integrated Debug Flow
+
+The complete workflow is:
+
+```text
+                         Failure
+                            |
+                            v
+                    NEXUS Discovery
+                            |
+                            v
+                   Failure Triage
+                            |
+                            v
+                  Search Knowledge
+                     /          \
+                  Found          Not Found
+                   |                |
+                   v                v
+                Reuse          Select Tool
+                   |                |
+                   |        +-------+-------+
+                   |        |       |       |
+                   |       v       v       v
+                   |      MCP   Skill  VeriSight
+                   |                       |
+                   |                       v
+                   |               Deep Debug Analysis
+                   |                       |
+                   +-----------+-----------+
+                               |
+                               v
+                         Root Cause
+                               |
+                               v
+                         Evidence Chain
+                               |
+                               v
+                       Shared Knowledge
+                               |
+                    +----------+----------+
+                    |                     |
+                    v                     v
+               Existing Issue        New Issue
+                                          |
+                                          v
+                                    User Approval
+                                          |
+                                          v
+                                   Create Issue
+```
+
+This allows the system to choose the **least expensive path that can reliably solve the problem**.
+
+---
+
+## VeriSight Analysis Pipeline
+
+When NEXUS selects VeriSight, VeriSight performs its specialized analysis.
+
+```text
+Specification
+RTL
+UVM Testbench
+Simulation Log
+Coverage
+Waveform
+       |
+       v
++-----------------------+
+| Knowledge Extraction  |
++-----------+-----------+
+            |
+            v
++-----------------------+
+| Root Cause            |
+| Classification        |
++-----------+-----------+
+            |
+            v
+       Is it an RTL Bug?
+          /       \
+        No         Yes
+        |           |
+        |           v
+        |    +-------------+
+        |    | RTL Analysis|
+        |    +------+------+
+        |           |
+        |           v
+        |      X-Tracer
+        |      Functional
+        |      CDC
+        |      Lint
+        |      Structural
+        |      Protocol
+        |      Misc
+        |           |
+        +-----------+
+                    |
+                    v
+             Report Generation
+                    |
+                    v
+              Fix Generation
+```
+
+VeriSight's RTL analysis stage contains seven specialized analyzers and runs on the RTL-bug path, avoiding unnecessary analysis for other failure types.
+
+---
+
+## Knowledge Extraction
+
+VeriSight first creates a structured representation of the design and failure.
+
+The framework uses deterministic parsers for:
+
+* RTL
+* UVM testbench code
+* Simulation logs
+* Specifications
+* Coverage
+
+This information is then enriched through the AI analysis stage.
+
+The result includes a structured knowledge artifact such as:
+
+```text
+knowledge.json
+```
+
+The separation between deterministic parsing and AI reasoning is important because basic extraction does not require LLM calls.
+
+NEXUS can then use this result together with its broader shared resources.
+
+---
+
+## Root-Cause Analysis
+
+VeriSight classifies the failure into:
+
+```text
+TB Bug
+RTL Bug
+Spec Bug
+Unknown
+```
+
+and provides confidence and supporting evidence.
+
+For example:
+
+```text
+Failure:
+AXI write response timeout
+
+Classification:
+RTL Bug
+
+Confidence:
+92%
+
+Evidence:
+- AWVALID is asserted.
+- AWREADY does not respond.
+- Timeout begins after reset release.
+- RTL state machine remains in the wrong state.
+
+Root Cause:
+Incorrect RTL state transition after reset.
+```
+
+NEXUS can then correlate this result with previous failures.
+
+---
+
+## RTL Root-Cause Analysis
+
+If the failure is classified as an RTL bug, VeriSight can perform deeper analysis.
+
+The available analyzers include:
+
+```text
+X-Tracer
+Functional Analysis
+CDC Analysis
+Lint Analysis
+Structural Analysis
+Protocol Compliance
+Miscellaneous Analysis
+```
+
+This can help trace a failure from a high-level symptom to a specific RTL defect.
+
+For example:
+
+```text
+Scoreboard Mismatch
+        |
+        v
+Unexpected Data
+        |
+        v
+Incorrect Internal Signal
+        |
+        v
+Incorrect State
+        |
+        v
+RTL Logic
+        |
+        v
+Root Cause
+```
+
+---
+
+## Waveform and X-Propagation Debug
+
+Waveform analysis can be used when simulation behavior cannot be understood from logs alone.
+
+VeriSight supports `x-tracer` for signal-level X-propagation analysis over VCD and gate-level netlist information.
+
+Yosys can be used to generate a netlist when required.
+
+The integrated flow can therefore be:
+
+```text
+Regression Failure
+       |
+       v
+Simulation Log
+       |
+       v
+Unexpected X
+       |
+       v
+NEXUS selects VeriSight
+       |
+       v
+X-Tracer
+       |
+       v
+Trace Signal Backwards
+       |
+       v
+Identify Source
+       |
+       v
+RTL Root Cause
+```
+
+---
+
+## Regression Analysis
+
+Regression data is one of the key inputs to the NEXUS workflow.
+
+Instead of analyzing every failing test independently, NEXUS can group failures and search for existing knowledge.
+
+```text
+Regression
+    |
+    v
+100 Failed Tests
+    |
+    v
+Failure Signature Extraction
+    |
+    v
+Group Similar Failures
+    |
+    v
+Search Shared Knowledge
+    |
+    +---- Known Failure
+    |        |
+    |        v
+    |     Reuse
+    |
+    +---- New Failure
+             |
+             v
+          VeriSight
+```
+
+This is particularly useful when hundreds of regression tests fail because of the same underlying RTL or environment problem.
+
+---
+
+## Shared Knowledge and RAG
+
+The combined system is designed around **knowledge reuse**.
+
+VeriSight already provides a persistent ChromaDB-based RAG layer for historical debugging information.
+
+NEXUS provides the broader shared environment in which this information can be reused by multiple engineers, projects, and domains.
+
+The goal is:
+
+```text
+Engineer A
+    |
+    v
+Finds Root Cause
+    |
+    v
+Store Knowledge
+    |
+    v
+Shared Knowledge
+    |
+    +-------------------+
+    |                   |
+    v                   v
+Engineer B          Engineer C
+    |                   |
+    v                   v
+Reuse Result        Reuse Result
+```
+
+A failure solved once should not require the same expensive analysis every time it appears again.
+
+---
+
+## Failure Deduplication
+
+Before invoking an expensive AI analysis, NEXUS should search for an existing failure signature.
+
+Useful information includes:
+
+```text
+Test Name
+Failure Message
+Assertion
+Error Code
+Module
+Interface
+Signal
+Regression
+Seed
+Simulation Phase
+```
+
+For example:
+
+```text
+AXI_WRITE_TIMEOUT
+axi_master
+AWVALID/AWREADY
+write_response
+```
+
+can be used as a searchable failure signature.
+
+If a matching historical result exists:
+
+```text
+Current Failure
+      |
+      v
+Search Knowledge
+      |
+      v
+Match Found
+      |
+      v
+Reuse Existing Root Cause
+```
+
+If no match exists:
+
+```text
+Current Failure
+      |
+      v
+Search Knowledge
+      |
+      v
+No Match
+      |
+      v
+Invoke VeriSight
+```
+
+This is one of the main ways the combined framework reduces unnecessary token consumption.
+
+---
+
+## Token-Efficient Debugging
+
+The system should follow a simple rule:
+
+> **Do not send more information to an AI model than is required to solve the problem.**
+
+The intended workflow is:
+
+```text
+Discover
+   |
+   v
+Extract
+   |
+   v
+Classify
+   |
+   v
+Search Existing Knowledge
+   |
+   +---- Found ----> Reuse
+   |
+   +---- Not Found
+           |
+           v
+       Targeted Debug
+           |
+           v
+         Result
+```
+
+Instead of:
+
+```text
+Read Entire Repository
+        |
+        v
+Read All Logs
+        |
+        v
+Read All RTL
+        |
+        v
+Send Everything to LLM
+        |
+        v
+Analyze From Scratch
+```
+
+NEXUS should perform the first-level filtering.
+
+VeriSight should receive the relevant evidence for deeper analysis.
+
+This creates a two-level debug strategy:
+
+```text
+Level 1: NEXUS
+Fast triage and routing
+
+Level 2: VeriSight
+Deep verification analysis
+```
+
+---
+
+## Agentic Hardware Verification
+
+The framework can support custom hardware verification agents in addition to VeriSight.
+
+For example:
+
+```text
+NEXUS
+ |
+ +-- RTL Debug Agent
+ |
+ +-- UVM Debug Agent
+ |
+ +-- Regression Agent
+ |
+ +-- Log Analysis Agent
+ |
+ +-- Waveform Agent
+ |
+ +-- Protocol Agent
+ |
+ +-- Issue/Triage Agent
+ |
+ +-- VeriSight
+```
+
+These agents do not need to operate independently.
+
+NEXUS can select the appropriate capability based on the failure.
+
+For example:
+
+```text
+UVM Objection Hang
+       |
+       v
+UVM Debug Skill
+```
+
+while:
+
+```text
+RTL X-Propagation
+       |
+       v
+VeriSight
+       |
+       v
+X-Tracer
+```
+
+and:
+
+```text
+100 Regression Failures
+       |
+       v
+Regression MCP
+       |
+       v
+Failure Clustering
+       |
+       v
+VeriSight on Representative Failure
+```
+
+This allows the framework to scale without creating one oversized agent.
+
+---
+
+## Issue Creation
+
+Issue creation is the final stage of the debug workflow, not the first.
+
+The recommended process is:
+
+```text
+Failure
+   |
+   v
+Triage
+   |
+   v
+Knowledge Search
+   |
+   +---- Existing Issue
+   |          |
+   |          v
+   |       Reuse/Link
+   |
+   +---- No Existing Issue
+              |
+              v
+          Deep Debug
+              |
+              v
+          Root Cause
+              |
+              v
+        User Approval
+              |
+              v
+         Create Issue
+```
+
+A generated issue should contain concise, reusable information:
+
+```text
+Failure Signature
+Test
+Regression
+Component
+Root Cause
+Evidence
+Recommended Fix
+Relevant VeriSight Report
+Related Knowledge
+```
+
+Large raw logs should not be copied into every issue when a reference to the original artifact is sufficient.
+
+---
+
+## Fix Generation
+
+When the failure is sufficiently understood, VeriSight can generate a candidate source-code fix.
+
+Its fix-generation stage is designed to read the actual source files and produce a unified diff, while avoiding unsupported or speculative changes. It can also degrade gracefully when the evidence is insufficient.
+
+The combined system should use:
+
+```text
+VeriSight
+    |
+    v
+Candidate Fix
+    |
+    v
+NEXUS Review
+    |
+    v
+User Approval
+    |
+    v
+Apply Fix
+    |
+    v
+Regression
+    |
+    v
+Verify Fix
+```
+
+The AI should not automatically modify RTL or verification code unless the project explicitly allows it.
+
+---
+
+## Debug Artifacts
+
+VeriSight produces structured artifacts from each analysis.
+
+Typical outputs include:
+
+```text
+output/
+├── knowledge.json
+├── summary.json
+├── error.json
+├── report.md
+├── report.html
+├── summary.txt
+├── analysis/
+│   └── *.json
+└── fix/
+    └── ...
+```
+
+These outputs can be consumed by NEXUS for further processing, knowledge reuse, and issue tracking.
+
+---
+
+## Installation
+
+### Clone NEXUS
 
 ```bash
 git clone https://github.com/vinodnikhil0506/nexus.git --recursive
 ```
 
-### 2. Enter the repository
-
 ```bash
 cd nexus
 ```
-
-### 3. Initialize the NEXUS environment
-
-```bash
-source ./init.sh
-```
-
-The initialization script prepares the environment and makes the NEXUS tools available in the current shell. ([GitHub][1])
-
-### 4. Start NEXUS
-
-```bash
-nexus
-```
-
-The NEXUS menu guides you through the initial setup. You can select the required **domain, MCP servers, and Skills** for your workflow. ([GitHub][1])
-
-### 5. Start the local debug services (optional)
-
-To start the Issue Tracker:
-
-```bash
-issue_tracker_server
-```
-
-To start the Regression DB:
-
-```bash
-regression_db_server
-```
-
-Or start the NEXUS web services together:
-
-```bash
-start_nexus_webpages
-```
-
-These services provide local tools for working with regression results and issue data. ([GitHub][1])
-
-### 6. Launch Claude with the NEXUS environment
-
-```bash
-claude
-```
-
-Claude can then use the configured NEXUS resources, MCPs, Skills, and workspace configuration. ([GitHub][1])
-
-## How to Use
-
-A typical NEXUS hardware-debug session follows this flow:
-
-```text
-Hardware Failure
-      │
-      ▼
-Workspace Discovery
-      │
-      ▼
-Failure Classification
-      │
-      ├── RTL
-      ├── SystemVerilog
-      ├── UVM
-      ├── Regression
-      ├── Log
-      └── Waveform
-      │
-      ▼
-Select MCP / Skill / Agent
-      │
-      ▼
-Debug & Root-Cause Analysis
-      │
-      ▼
-Search Shared Knowledge
-      │
-      ├── Known Failure
-      │       └── Reuse Existing Root Cause
-      │
-      └── New Failure
-              │
-              ▼
-         User Approval
-              │
-              ▼
-        Create New Issue
-```
-
-### Basic workflow
-
-Initialize the environment:
 
 ```bash
 source ./init.sh
@@ -199,83 +922,353 @@ Start NEXUS:
 nexus
 ```
 
-Launch Claude:
+### Clone VeriSight (Stanalone)
 
 ```bash
-claude
+git clone https://github.com/KITTUV03/VeriSight.git
 ```
 
-For example, an engineer can provide a failure such as:
+```bash
+cd VeriSight
+```
+
+Install VeriSight:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Configure the LLM provider:
+
+```bash
+cp .env.example .env
+```
+
+For Gemini:
+
+```bash
+export GEMINI_API_KEY="your-gemini-key"
+```
+
+Or for Anthropic:
+
+```bash
+export ANTHROPIC_API_KEY="your-anthropic-key"
+```
+
+---
+
+## Direct VeriSight Execution
+
+VeriSight can also be executed directly when a user explicitly wants to run the complete verification-debug pipeline.
+
+Example:
+
+```bash
+python main.py \
+    --spec examples/specs/alu_spec.md \
+    --rtl examples/rtl/ \
+    --tb examples/tb/ \
+    --log examples/logs/sim.log \
+    --output output/
+```
+
+The resulting artifacts can then be reviewed or consumed by the NEXUS workflow.
+
+---
+
+## NEXUS-Driven Execution
+
+The preferred integrated workflow is to start from NEXUS.
 
 ```text
-Regression failure:
-TEST: axi_write_error_test
-SEED: 184739
-ERROR: AXI response timeout
-WAVE: test.vcd
+Engineer
+   |
+   v
+NEXUS
+   |
+   v
+Understand Workspace
+   |
+   v
+Understand Failure
+   |
+   v
+Search Existing Knowledge
+   |
+   +-------------------+
+   |                   |
+   v                   v
+Known              Unknown
+   |                   |
+   v                   v
+Reuse            Select Capability
+                       |
+              +--------+--------+
+              |        |        |
+              v        v        v
+             MCP     Skill   VeriSight
+                                |
+                                v
+                         Deep Debug
+                                |
+                                v
+                           Root Cause
+                                |
+                                v
+                        Shared Knowledge
+                                |
+                                v
+                         Issue if Needed
 ```
 
-The agent can then:
+This makes VeriSight part of the **NEXUS debug ecosystem**, rather than requiring engineers to decide manually which system to use for every failure.
 
-1. Identify the project and verification domain.
-2. Find the relevant MCP, Skill, or hardware-debug agent.
-3. Analyze the regression result and relevant logs.
-4. Inspect waveform data when required.
-5. Determine the likely root cause.
-6. Search the shared knowledge base for previous occurrences.
-7. Report whether the failure is **known, similar, or new**.
-8. Ask for approval before creating a new persistent issue or knowledge entry.
+---
 
-### Reuse Across Engineers
+## Example
 
-The main goal of NEXUS is to avoid debugging the same problem repeatedly.
-
-Instead of:
+Consider a regression containing:
 
 ```text
-Engineer A → Debug failure → Find root cause
-Engineer B → Same failure → Debug again
-Engineer C → Same failure → Debug again
+TEST:
+axi_write_test
+
+WAVE:
+test.vcd
+
+ERROR:
+AXI write response timeout
+
+MODULE:
+axi_master
 ```
 
-NEXUS enables:
+The engineer does not need to manually decide how to debug it.
+
+NEXUS can:
 
 ```text
-                  Shared Knowledge
-                        ▲
-                        │
-          ┌─────────────┼─────────────┐
-          │             │             │
-     Engineer A    Engineer B    Engineer C
-          │             │             │
-          └─────────────┼─────────────┘
-                        │
-                 NEXUS Debug Flow
+1. Identify the workspace.
+2. Identify the verification domain.
+3. Extract the failure signature.
+4. Search previous regression failures.
+5. Search shared debug knowledge.
+6. Determine whether the failure is already known.
 ```
 
-A known failure can therefore be identified and reused instead of being analyzed from scratch.
+If it is known:
 
-## Design Philosophy
+```text
+Reuse Existing Result
+```
 
-NEXUS follows a simple principle:
+If it is new:
 
-> **Discover once. Reuse everywhere.**
+```text
+NEXUS
+  |
+  v
+Select VeriSight
+  |
+  v
+Specification + RTL + UVM + Log
+  |
+  v
+Knowledge Extraction
+  |
+  v
+Root Cause Classification
+  |
+  v
+RTL Analysis if Required
+  |
+  v
+Report / Candidate Fix
+  |
+  v
+NEXUS
+  |
+  v
+Knowledge / Issue
+```
 
-The framework keeps detailed capabilities in **MCPs, Skills, agents, and shared resources** instead of putting large amounts of instructions into every project or AI session.
+The engineer therefore gets one integrated workflow instead of manually moving between multiple tools.
 
-This helps reduce:
+---
 
-* Repeated context
-* Token usage
-* Duplicate debugging work
-* Duplicate knowledge
-* Repeated regression analysis
-* Repeated issue investigation
+## Repository Model
 
-The AI agent acts as an **orchestrator**. It selects the smallest set of tools needed for the current failure and uses the shared infrastructure for deeper analysis.
+A typical deployment can look like:
 
-## 🔗 Repository
+```text
+workspace/
+│
+├── nexus/
+│   ├── nexus-resources/
+│   │   ├── mcp/
+│   │   └── skills/
+│   ├── nexus-workspace/
+│   ├── init.sh
+│   └── ...
+│
+├── VeriSight/
+│   ├── verisight/
+│   ├── examples/
+│   ├── tests/
+│   ├── templates/
+│   └── main.py
+│
+└── project/
+    ├── rtl/
+    ├── tb/
+    ├── specs/
+    ├── tests/
+    ├── logs/
+    ├── waves/
+    └── regression/
+```
 
-[NEXUS on GitHub](https://github.com/vinodnikhil0506/nexus?utm_source=chatgpt.com)
+The project remains the source of truth for design and verification files.
 
-[1]: https://github.com/vinodnikhil0506/nexus "GitHub - vinodnikhil0506/nexus · GitHub"
+NEXUS provides the shared orchestration and reusable resources.
+
+VeriSight provides the specialized verification-debug pipeline.
+
+---
+
+## Design Principles
+
+### One Debug Entry Point
+
+Engineers should start with NEXUS rather than manually selecting individual debug tools.
+
+### Reuse Existing Knowledge
+
+Search before analyzing.
+
+### Route Before Running
+
+Determine which capability is required before invoking it.
+
+### Deep Analysis Only When Required
+
+Use VeriSight when the failure requires its deeper verification analysis.
+
+### Share Results
+
+A successful debug should become reusable knowledge for future failures.
+
+### Avoid Duplicate Analysis
+
+Identical regression failures should not trigger independent AI investigations.
+
+### Preserve Evidence
+
+Root-cause results should contain enough evidence to explain why the conclusion was reached.
+
+### Minimize Tokens
+
+Use deterministic parsing, targeted searches, failure signatures, conditional analysis, and existing knowledge before sending large contexts to an LLM.
+
+### Keep Components Focused
+
+NEXUS coordinates the workflow.
+
+MCPs and Skills provide reusable capabilities.
+
+VeriSight performs specialized verification analysis.
+
+The project provides the actual design and verification data.
+
+---
+
+## Future Vision
+
+The combined system can grow into a common AI debug platform for multiple hardware domains.
+
+```text
+                         NEXUS
+                           |
+       +-------------------+-------------------+
+       |                   |                   |
+       v                   v                   v
+    Domain A            Domain B            Domain C
+       |                   |                   |
+       +-------------------+-------------------+
+                           |
+                    Shared Knowledge
+                           |
+       +-------------------+-------------------+
+       |                   |                   |
+       v                   v                   v
+     MCPs               Skills              Agents
+                           |
+                           v
+                       VeriSight
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+        Logs           Waveforms          RTL/UVM
+          |                |                |
+          +----------------+----------------+
+                           |
+                           v
+                       Root Cause
+                           |
+                           v
+                    Shared Knowledge
+                           |
+                           v
+                    Issue / Fix / Report
+```
+
+The long-term objective is to make hardware debug **cumulative**.
+
+Every new investigation should improve the system's ability to recognize and solve future failures.
+
+## Summary
+
+NEXUS and VeriSight are intended to work together as one hardware-debug workflow.
+
+```text
+NEXUS
+    |
+    |-- Understand the workspace
+    |-- Understand the failure
+    |-- Search existing knowledge
+    |-- Select the right capability
+    |-- Coordinate MCPs and Skills
+    |-- Manage regression information
+    |-- Manage issues
+    |-- Reuse results
+    |
+    v
+VERISIGHT
+    |
+    |-- Extract verification knowledge
+    |-- Classify root cause
+    |-- Analyze RTL when required
+    |-- Analyze X propagation
+    |-- Generate reports
+    |-- Generate candidate fixes
+    |-- Reuse historical debug knowledge
+    |
+    v
+NEXUS
+    |
+    |-- Correlate results
+    |-- Store reusable knowledge
+    |-- Link/create issues
+    |-- Share results with engineers
+    |
+    v
+Future Debug Sessions
+```
+
+The central idea is simple:
+
+> **NEXUS decides how a failure should be debugged. VeriSight provides deep verification analysis when that path is selected. The resulting knowledge becomes reusable through NEXUS.**
+
+This creates a shared hardware-debug system where **MCPs, Skills, custom agents, VeriSight, regression data, issue tracking, and historical knowledge work together instead of operating as separate tools.**
